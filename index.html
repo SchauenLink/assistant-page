@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SchauenLink Assistant</title>
+  <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background-color: #f4f6fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #webchat {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="webchat"></div>
+
+  <script>
+    async function fetchDirectLineToken() {
+      const response = await fetch('https://schauenlink.com/api/directline/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const { token } = await response.json();
+      return token;
+    }
+
+    (async () => {
+      const directLineToken = await fetchDirectLineToken();
+      if (!directLineToken) return;
+
+      window.WebChat.renderWebChat({
+        directLine: window.WebChat.createDirectLine({ token: directLineToken }),
+        styleOptions: {
+          botAvatarInitials: 'SL',
+          userAvatarInitials: 'Me',
+          hideUploadButton: true,
+          bubbleBackground: '#e6f0ff',
+          bubbleFromUserBackground: '#d1e7dd'
+        }
+      }, document.getElementById('webchat'));
+    })();
+  </script>
+</body>
+</html>
