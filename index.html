@@ -15,27 +15,76 @@
       height: 100%;
       width: 100%;
     }
+
+    #webchat-status {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff3cd;
+      color: #664d03;
+      border: 1px solid #ffeeba;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+      max-width: 90%;
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div id="webchat-status" role="status" aria-live="polite"></div>
   <div id="webchat"></div>
 
   <script>
-    async function fetchDirectLineToken() {
-      const response = await fetch('https://schauenlink.com/api/directline/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+    const statusElement = document.getElementById('webchat-status');
 
-      const { token } = await response.json();
-      return token;
+    function showStatus(message, { isError = false } = {}) {
+      if (!statusElement) return;
+
+      statusElement.textContent = message;
+      statusElement.style.display = message ? 'block' : 'none';
+      statusElement.style.background = isError ? '#f8d7da' : '#fff3cd';
+      statusElement.style.color = isError ? '#842029' : '#664d03';
+      statusElement.style.borderColor = isError ? '#f5c2c7' : '#ffeeba';
+    }
+
+    async function fetchDirectLineToken() {
+      try {
+        const response = await fetch('https://schauenlink.com/api/directline/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const { token } = await response.json();
+
+        if (!token) {
+          throw new Error('Token missing from response payload');
+        }
+
+        return token;
+      } catch (error) {
+        console.error('Failed to fetch Direct Line token', error);
+        showStatus('We\'re having trouble connecting to the assistant. Please try again later.', { isError: true });
+        return null;
+      }
     }
 
     (async () => {
+      showStatus('Connecting to the assistant…');
       const directLineToken = await fetchDirectLineToken();
-      if (!directLineToken) return;
+
+      if (!directLineToken) {
+        return;
+      }
+
+      showStatus('');
 
       window.WebChat.renderWebChat({
         directLine: window.WebChat.createDirectLine({ token: directLineToken }),
